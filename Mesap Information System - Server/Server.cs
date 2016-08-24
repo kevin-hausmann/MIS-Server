@@ -38,9 +38,9 @@ namespace MesapInformationSystem
         {
             // Create objects needed for MESAP Server access
             root = new M4DBO.dboRoot();
-            mspErrDboInitEnum rootErr = root.Initialize("", mspM4AppEnum.mspM4AppOEM, false, TITLE);
 
-            if (rootErr != mspErrDboInitEnum.mspErrNone)
+            mspErrDboInitEnum rootError = root.Initialize("", mspM4AppEnum.mspM4AppOEM, false, TITLE);
+            if (rootError != mspErrDboInitEnum.mspErrNone)
             {
                 WriteStatus("Can not connect to MESAP server.");
                 WriteStatus("Stopped.");
@@ -50,8 +50,16 @@ namespace MesapInformationSystem
             }
 
             // Login to MESAP Message Server
-            root.Login(Private.User, Private.Password, USE_SYSTEM_DB, Private.SystemPassword);
-            
+            mspErrDboLoginEnum loginError = root.Login(Private.User, Private.Password, USE_SYSTEM_DB, Private.SystemPassword);
+            if (loginError != mspErrDboLoginEnum.mspErrNone)
+            {
+                WriteStatus("Can not log in as " + Private.User + "!");
+                WriteStatus("Stopped.");
+                WriteStatus("Press any key to close...");
+                Console.ReadKey();
+                return;
+            }
+
             userLister = new UserListGenerator(root);
             changeLister = new ChangeListGenerator(root);
 
