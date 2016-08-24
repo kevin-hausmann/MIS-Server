@@ -1,0 +1,3 @@
+﻿# Ignore private (password) data files
+Private.resx
+Private.Designer.cs
