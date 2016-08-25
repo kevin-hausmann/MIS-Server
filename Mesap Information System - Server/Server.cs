@@ -111,7 +111,7 @@ namespace MesapInformationSystem
                 WriteStatus("New client accepted: " + context.Request.RemoteEndPoint.ToString());
 
                 // Start new server thread
-                new ServerThread(context, root, userLister, changeLister);
+                new ServerThread(context, userLister, changeLister);
             }
         }
 
@@ -139,16 +139,11 @@ namespace MesapInformationSystem
         // The client
         private HttpListenerContext context = null;
 
-        // Root object for database access
-        private dboRoot root;
-
         // Create and start server thread
-        public ServerThread(HttpListenerContext context, dboRoot root, 
-            UserListGenerator userLister, ChangeListGenerator changeLister)
+        public ServerThread(HttpListenerContext context, UserListGenerator userLister, ChangeListGenerator changeLister)
         {
             this.context = context;
-            this.root = root;
-
+       
             this.userLister = userLister;
             this.changeLister = changeLister;
 
