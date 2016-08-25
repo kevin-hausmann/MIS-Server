@@ -33,9 +33,6 @@ namespace MesapInformationSystem
             {
                 dboInstalledUser user = users.Current as dboInstalledUser;
 
-                // skip ourselves
-                if (user.ID.Equals(Private.User)) continue;
-
                 result += "{\"name\": \"" + user.Name + "\", " +
                     "\"loggedIn\": \"" + IsUserLoggedIn(user.UserNr) + "\", " +
                     "\"databases\": " + ListDatabaseLoggedInto(user.UserNr) + ", " +
