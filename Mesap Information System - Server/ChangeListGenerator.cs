@@ -101,7 +101,7 @@ namespace MesapInformationSystem
                 databaseConnection.Open();
 
                 // Reports
-                ProcessType(databaseId, "Report", REPORT, 2, 1, 14, 13, hoursBack);
+                ProcessType(databaseId, "Report", REPORT, 2, 1, 18, 17, hoursBack);
 
                 // Calculations
                 ProcessType(databaseId, "CalculationMethod", CALCULATION, 2, 1, 11, 10, hoursBack);
@@ -110,16 +110,13 @@ namespace MesapInformationSystem
                 ProcessType(databaseId, "Tree", TREE, 2, 1, 8, 7, hoursBack);
 
                 // Descriptors
-                ProcessType(databaseId, "TreeObject", DESCRIPTOR, 2, 1, 12, 11, hoursBack);
+                ProcessType(databaseId, "TreeObject", DESCRIPTOR, 2, 1, 16, 15, hoursBack);
 
                 // TimeSeries
-                ProcessType(databaseId, "TimeSeries", SERIES, 3, 2, 13, 11, hoursBack);
+                ProcessType(databaseId, "TimeSeries", SERIES, 3, 2, 15, 13, hoursBack);
 
                 // Views
                 ProcessType(databaseId, "TimeSeriesView", VIEW, 2, 1, 16, 15, hoursBack);
-
-                // CRF Variables
-                ProcessType(databaseId, "CrfVariable", CRF, 2, 4, 14, 13, hoursBack);
 
                 // Values
                 if (includeValues) ProcessValues(databaseId, hoursBack);
@@ -164,8 +161,9 @@ namespace MesapInformationSystem
             }
             catch (Exception ex)
             {
-                // Do not show obvious exceptions
-                if (!ex.Message.Contains("Crf")) Console.WriteLine("OOPS: " + ex.Message + ex.StackTrace);
+                Console.WriteLine("OOPS: " + ex.Message + ex.StackTrace);
+                Console.WriteLine("Database: " + databaseId);
+                Console.WriteLine("Table: " + table);
             }
             finally
             {

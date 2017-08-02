@@ -137,7 +137,7 @@
     </COMReference>
     <COMReference Include="M4DBO">
       <Guid>{C5507C91-59F2-45A2-9050-8C1E8671A42F}</Guid>
-      <VersionMajor>1076</VersionMajor>
+      <VersionMajor>1082</VersionMajor>
       <VersionMinor>0</VersionMinor>
       <Lcid>0</Lcid>
       <WrapperTool>tlbimp</WrapperTool>
