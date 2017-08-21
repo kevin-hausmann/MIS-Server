@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Specialized;
 using System.Data;
 using System.Data.SqlClient;
+using System.Runtime.CompilerServices;
 
 namespace MesapInformationSystem
 {
@@ -15,21 +16,21 @@ namespace MesapInformationSystem
         // API access object
         private dboRoot root;
 
-        // Cached result string containing all changes in JSON
-        private String result;
-
-        // Helper to memorize last hours back value
-        private int lastHoursBack;
-
-        // Helper to memorize include values
-        private bool includeValues;
-
-        // Datetime of last result generation
-        private DateTime generatedOn;
-
         // Direct non-API database access
         private SqlConnection databaseConnection;
 
+        // Cached result string containing all changes in JSON
+        private String cachedResult;
+
+        // Helper to memorize last hours back value
+        private int cachedHoursBack;
+
+        // Helper to memorize include values
+        private bool cachedIncludeValues;
+
+        // Datetime of last result generation
+        private DateTime generatedOn;
+        
         // Life time of cache results
         private const int CACHE_LIFETIME_MINUTES = 10;
 
@@ -47,9 +48,8 @@ namespace MesapInformationSystem
         private const String SERIES = "SERIES";
         private const String VALUE = "VALUE";
         private const String VIEW = "VIEW";
-        private const String CRF = "CRF";
 
-        private String[] databases = { "ESz", "BEU", "ZSE_aktuell", "PoSo", "ZSE_Submission_2012_20120305", "ZSE_Submission_2013_20130220" };
+        private String[] databases = { "ESz", "BEU", "ZSE_aktuell", "PoSo", "ZSE_Submission_2017_20170217" };
 
         private NameValueCollection userNameCache = new NameValueCollection();
 
@@ -58,39 +58,41 @@ namespace MesapInformationSystem
             this.root = root;
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         internal String Generate(String hoursBackParameter, String includeValuesParameter)
         {
             // Find requested length of change list (how many hours back?)
             int hoursBack = DecodeHoursBack(hoursBackParameter);
+            // Include values on this request?
+            bool includeValues = DecodeIncludeValues(includeValuesParameter);
 
             // Can we return cached result?
-            if (result != null && !IsCacheExpired() && hoursBack.Equals(lastHoursBack)
-                && includeValues.Equals(DecodeIncludeValues(includeValuesParameter))) return result;
+            if (cachedResult == null || IsCacheExpired() || !hoursBack.Equals(cachedHoursBack)
+                || !cachedIncludeValues.Equals(includeValues))
+            { 
+                // Update cached request parameters
+                cachedHoursBack = hoursBack;
+                cachedIncludeValues = includeValues;
 
-            // Include values on this request?
-            includeValues = DecodeIncludeValues(includeValuesParameter);
+                // Start generating result
+                cachedResult = "[";
 
-            // Store hours back value to decide on cache validity
-            lastHoursBack = hoursBack;
-
-            // Start generating result
-            result = "[";
-
-            // Cycle through all databases
-            for (int db = 0; db < databases.Length; db++) 
-                AppendChanges(databases[db], hoursBack);
+                // Cycle through all databases
+                for (int db = 0; db < databases.Length; db++) 
+                    AppendChanges(databases[db], hoursBack);
             
-            // If any changes happend, remove last comma
-            if (result.Length > 1)
-                result = result.Substring(0, result.Length - 1);
+                // If any changes happend, remove last comma
+                if (cachedResult.Length > 1)
+                    cachedResult = cachedResult.Substring(0, cachedResult.Length - 1);
 
-            // Add missing bracket before return
-            result += "]";
+                // Add missing bracket before return
+                cachedResult += "]";
 
-            // Set cache stamp
-            generatedOn = DateTime.Now;
+                // Set cache stamp
+                generatedOn = DateTime.Now;
+            }
 
-            return result;
+            return cachedResult;
         }
 
         private void AppendChanges(String databaseId, int hoursBack)
@@ -119,7 +121,7 @@ namespace MesapInformationSystem
                 ProcessType(databaseId, "TimeSeriesView", VIEW, 2, 1, 16, 15, hoursBack);
 
                 // Values
-                if (includeValues) ProcessValues(databaseId, hoursBack);
+                if (cachedIncludeValues) ProcessValues(databaseId, hoursBack);
             }
             catch (Exception ex)
             {
@@ -152,7 +154,7 @@ namespace MesapInformationSystem
                 reader = new SqlCommand(query, databaseConnection).ExecuteReader();
 
                 while (reader.Read())
-                    result += "{\"database\": \"" + databaseId + "\", " +
+                    cachedResult += "{\"database\": \"" + databaseId + "\", " +
                     "\"type\": \"" + type + "\", " +
                     "\"name\": \"" + reader.GetString(nameCol) + "\", " +
                     "\"id\": \"" + reader.GetString(idCol) + "\", " +
@@ -161,9 +163,7 @@ namespace MesapInformationSystem
             }
             catch (Exception ex)
             {
-                Console.WriteLine("OOPS: " + ex.Message + ex.StackTrace);
-                Console.WriteLine("Database: " + databaseId);
-                Console.WriteLine("Table: " + table);
+                throw ex;
             }
             finally
             {
@@ -185,7 +185,7 @@ namespace MesapInformationSystem
 
                 while (reader.Read())
                 {
-                    result += "{\"database\": \"" + databaseId + "\", " +
+                    cachedResult += "{\"database\": \"" + databaseId + "\", " +
                         "\"type\": \"" + VALUE + " " + (reader.GetInt32(0) + 2000) + "\", " +
                         "\"name\": \"" + reader.GetString(2) + "\", " +
                         "\"id\": \"" + reader.GetString(1) + "\", " +
@@ -266,6 +266,7 @@ namespace MesapInformationSystem
                     databaseName = databaseId.ToUpper(); break; 
                 case "ZSE_aktuell":
                     databaseName = databaseId; break;
+                case "ZSE_Submission_2017_20170217":
                 case "ZSE_Submission_2016_20160203": 
                 case "ZSE_Submission_2015_20150428":
                 case "ZSE_Submission_2014_20140303":

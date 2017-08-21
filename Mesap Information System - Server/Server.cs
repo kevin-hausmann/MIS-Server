@@ -12,6 +12,7 @@ namespace MesapInformationSystem
     {
         // MESAP client server system connection settings
         private const String TITLE = "MESAP Information System";
+        private const String SHORT_TITLE = "MIS";
         private const bool USE_SYSTEM_DB = true;
         
         // Port we will listen on
@@ -117,7 +118,7 @@ namespace MesapInformationSystem
 
         public static void WriteStatus(String message)
         {
-            Console.WriteLine("[" + TITLE + "] " + message);
+            Console.WriteLine("[" + SHORT_TITLE + "] " + message);
         }
     }
 
@@ -155,6 +156,7 @@ namespace MesapInformationSystem
         {
             HttpListenerRequest request = context.Request;
             HttpListenerResponse response = context.Response;
+            DateTime requestReceived = DateTime.Now;
 
             Server.WriteStatus("Request received: " + request.Url);
                        
@@ -179,7 +181,7 @@ namespace MesapInformationSystem
             // Close the output stream.
             response.OutputStream.Close();
 
-            Server.WriteStatus("Response sent (" + buffer.Length + " bytes)");
+            Server.WriteStatus("Response sent (" + buffer.Length + " bytes, " + (DateTime.Now - requestReceived).TotalSeconds + " seconds)");
         }        
     }
 }
