@@ -11,7 +11,7 @@ namespace MesapInformationSystem
     /// <summary>
     /// Generates database changes list as a service for the MESAP Information System Server
     /// </summary>
-    class ChangeListGenerator
+    class ChangeListGenerator : IDisposable
     {
         // API access object
         private dboRoot root;
@@ -95,6 +95,11 @@ namespace MesapInformationSystem
             return cachedResult;
         }
 
+        public void Dispose()
+        {
+            databaseConnection.Dispose();
+        }
+
         private void AppendChanges(String databaseId, int hoursBack)
         {
             try
@@ -150,8 +155,12 @@ namespace MesapInformationSystem
 
             try
             {
-                String query = "SELECT * FROM " + table + " WHERE (ChangeDate > '" + DateTime.Now.AddHours(-hoursBack) + "')";
-                reader = new SqlCommand(query, databaseConnection).ExecuteReader();
+                SqlCommand command = new SqlCommand();
+                command.Connection = databaseConnection;
+
+                command.Parameters.Add("@cut", SqlDbType.DateTime).Value = DateTime.Now.AddHours(-hoursBack);
+                command.CommandText = "SELECT * FROM " + table + " WHERE (ChangeDate > @cut)";
+                reader = command.ExecuteReader();
 
                 while (reader.Read())
                     cachedResult += "{\"database\": \"" + databaseId + "\", " +
@@ -160,10 +169,6 @@ namespace MesapInformationSystem
                     "\"id\": \"" + reader.GetString(idCol) + "\", " +
                     "\"user\": \"" + GetUserName(reader.GetString(userCol)) + "\", " +
                     "\"datetime\": \"" + reader.GetDateTime(dateCol) + "\"},";
-            }
-            catch (Exception ex)
-            {
-                throw ex;
             }
             finally
             {
