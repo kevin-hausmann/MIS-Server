@@ -107,25 +107,13 @@ namespace MesapInformationSystem
                 Connect(databaseId);
                 databaseConnection.Open();
 
-                // Reports
-                ProcessType(databaseId, "Report", REPORT, 2, 1, 18, 17, hoursBack);
-
-                // Calculations
-                ProcessType(databaseId, "CalculationMethod", CALCULATION, 2, 1, 11, 10, hoursBack);
-
-                // Trees
-                ProcessType(databaseId, "Tree", TREE, 2, 1, 8, 7, hoursBack);
-
-                // Descriptors
-                ProcessType(databaseId, "TreeObject", DESCRIPTOR, 2, 1, 16, 15, hoursBack);
-
-                // TimeSeries
-                ProcessType(databaseId, "TimeSeries", SERIES, 3, 2, 15, 13, hoursBack);
-
-                // Views
-                ProcessType(databaseId, "TimeSeriesView", VIEW, 2, 1, 16, 15, hoursBack);
-
-                // Values
+                ProcessType(databaseId, REPORT, "Report", hoursBack);
+                ProcessType(databaseId, CALCULATION, "CalculationMethod", hoursBack);
+                ProcessType(databaseId, TREE, "Tree", hoursBack);
+                ProcessType(databaseId, DESCRIPTOR, "TreeObject", hoursBack);
+                ProcessType(databaseId, SERIES, "TimeSeries", hoursBack);
+                ProcessType(databaseId, VIEW, "TimeSeriesView", hoursBack);
+                // Values (if requested)
                 if (cachedIncludeValues) ProcessValues(databaseId, hoursBack);
             }
             catch (Exception ex)
@@ -142,33 +130,27 @@ namespace MesapInformationSystem
         /// Generates history for a certain type of object
         /// </summary>
         /// <param name="databaseId">Name of database</param>
-        /// <param name="table">Name of table objects are stored in</param>
         /// <param name="type">String to represent type in view</param>
-        /// <param name="nameCol">Table column to read object's name from</param>
-        /// <param name="idCol">Table column to read object's id from</param>
-        /// <param name="dateCol">Table column to read last change date from</param>
-        /// <param name="userCol">Table column to read user name from</param>
-        private void ProcessType(String databaseId, String table, String type, 
-            int nameCol, int idCol, int dateCol, int userCol, int hoursBack)
+        /// <param name="table">Name of table objects are stored in</param>
+        /// <param name="hoursback">Number of hours to search</param>
+        private void ProcessType(String databaseId, String type, String table, int hoursBack)
         {
             SqlDataReader reader = null;
 
             try
             {
-                SqlCommand command = new SqlCommand();
-                command.Connection = databaseConnection;
+                String query = "SELECT Name, Id, ChangeID, ChangeDate FROM " + table + " WHERE (ChangeDate > @after)";
+                SqlCommand command = new SqlCommand(query, databaseConnection);
+                command.Parameters.Add("@after", SqlDbType.DateTime).Value = DateTime.Now.AddHours(-hoursBack);
 
-                command.Parameters.Add("@cut", SqlDbType.DateTime).Value = DateTime.Now.AddHours(-hoursBack);
-                command.CommandText = "SELECT * FROM " + table + " WHERE (ChangeDate > @cut)";
                 reader = command.ExecuteReader();
-
                 while (reader.Read())
                     cachedResult += "{\"database\": \"" + databaseId + "\", " +
                     "\"type\": \"" + type + "\", " +
-                    "\"name\": \"" + reader.GetString(nameCol) + "\", " +
-                    "\"id\": \"" + reader.GetString(idCol) + "\", " +
-                    "\"user\": \"" + GetUserName(reader.GetString(userCol)) + "\", " +
-                    "\"datetime\": \"" + reader.GetDateTime(dateCol) + "\"},";
+                    "\"name\": \"" + reader.GetString(0) + "\", " +
+                    "\"id\": \"" + reader.GetString(1) + "\", " +
+                    "\"user\": \"" + GetUserName(reader.GetString(2)) + "\", " +
+                    "\"datetime\": \"" + reader.GetDateTime(3) + "\"},";
             }
             finally
             {
@@ -185,9 +167,11 @@ namespace MesapInformationSystem
             {
                 String query = "SELECT TimeSeriesData.PeriodNr, TimeSeries.Id, TimeSeries.Name, TimeSeriesData.ChangeName, " +
                     "TimeSeriesData.ChangeDate FROM TimeSeriesData INNER JOIN TimeSeries " +
-                    "ON TimeSeriesData.TsNr = TimeSeries.TsNr WHERE (TimeSeriesData.ChangeDate > '" + DateTime.Now.AddHours(-hoursBack) + "')";
-                reader = new SqlCommand(query, databaseConnection).ExecuteReader();
+                    "ON TimeSeriesData.TsNr = TimeSeries.TsNr WHERE (TimeSeriesData.ChangeDate > @after)";
+                SqlCommand command = new SqlCommand(query, databaseConnection);
+                command.Parameters.Add("@after", SqlDbType.DateTime).Value = DateTime.Now.AddHours(-hoursBack);
 
+                reader = command.ExecuteReader();
                 while (reader.Read())
                 {
                     cachedResult += "{\"database\": \"" + databaseId + "\", " +
