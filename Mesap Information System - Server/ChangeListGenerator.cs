@@ -49,7 +49,7 @@ namespace MesapInformationSystem
         private const String VALUE = "VALUE";
         private const String VIEW = "VIEW";
 
-        private String[] databases = { "ESz", "BEU", "ZSE_aktuell", "PoSo", "ZSE_Submission_2017_20170217" };
+        private String[] databases = { "ESz", "BEU", "ZSE_aktuell", "PoSo", "Enerdat", "ZSE_Submission_2020_20200325", "EMMa_2020" };
 
         private NameValueCollection userNameCache = new NameValueCollection();
 
@@ -254,7 +254,11 @@ namespace MesapInformationSystem
                 case "Enerdat":
                     databaseName = databaseId.ToUpper(); break; 
                 case "ZSE_aktuell":
+                case "EMMa_2020":
                     databaseName = databaseId; break;
+                case "ZSE_Submission_2020_20200325":
+                case "ZSE_Submission_2019_20190214":
+                case "ZSE_Submission_2018_20180214":
                 case "ZSE_Submission_2017_20170217":
                 case "ZSE_Submission_2016_20160203": 
                 case "ZSE_Submission_2015_20150428":
