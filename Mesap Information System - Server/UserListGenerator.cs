@@ -32,11 +32,12 @@ namespace MesapInformationSystem
             while (users.MoveNext())
             {
                 dboInstalledUser user = users.Current as dboInstalledUser;
-
-                result += "{\"name\": \"" + user.Name + "\", " +
-                    "\"loggedIn\": \"" + IsUserLoggedIn(user.UserNr) + "\", " +
-                    "\"databases\": " + ListDatabaseLoggedInto(user.UserNr) + ", " +
-                    "\"lastSeenOnline\": \"" + user.LoginDate.ToString() + "\"},";
+                // Do not include service users
+                if (!user.DenyInteractiveLogon)
+                    result += "{\"name\": \"" + user.Name + "\", " +
+                        "\"loggedIn\": \"" + IsUserLoggedIn(user.UserNr) + "\", " +
+                        "\"databases\": " + ListDatabaseLoggedInto(user.UserNr) + ", " +
+                        "\"lastSeenOnline\": \"" + user.LoginDate.ToString() + "\"},";
             }
 
             // Remove last comma and add missing bracket before return
